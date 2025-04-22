@@ -1,103 +1,170 @@
-import Image from "next/image";
+'use client';
+import { useState, useEffect } from 'react';
+
+const initialBoard = Array(9).fill(null);
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [board, setBoard] = useState<(string | null)[]>(initialBoard);
+  const [isXNext, setIsXNext] = useState(true);
+  const [winner, setWinner] = useState<string | null>(null);
+  const [mode, setMode] = useState<'pvp' | 'ai'>('pvp');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  useEffect(() => {
+    const win = calculateWinner(board);
+    if (win) {
+      setWinner(win);
+      setTimeout(() => {
+        alert(`🎉 Winner: ${win}`);
+      }, 100);
+    } else if (board.every(Boolean)) {
+      setWinner('Draw');
+      setTimeout(() => {
+        alert('😅 It\'s a draw!');
+      }, 100);
+    }
+
+    // If playing with AI and it's AI's turn
+    if (mode === 'ai' && !isXNext && !win && !board.every(Boolean)) {
+      const bestMove = findBestMove(board);
+      if (bestMove !== -1) {
+        const newBoard = board.slice();
+        newBoard[bestMove] = 'O';
+        setTimeout(() => {
+          setBoard(newBoard);
+          setIsXNext(true);
+        }, 500);
+      }
+    }
+  }, [board, isXNext, mode]);
+
+  const handleClick = (index: number) => {
+    if (board[index] || winner || (mode === 'ai' && !isXNext)) return;
+    const newBoard = board.slice();
+    newBoard[index] = isXNext ? 'X' : 'O';
+    setBoard(newBoard);
+    setIsXNext(!isXNext);
+  };
+
+  const resetGame = () => {
+    setBoard(initialBoard);
+    setIsXNext(true);
+    setWinner(null);
+  };
+
+  return (
+    <main className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
+      <h1 className="text-4xl font-bold mb-4">Tic-Tac-Toe</h1>
+
+      <select
+        value={mode}
+        onChange={(e) => {
+          setMode(e.target.value as 'pvp' | 'ai');
+          resetGame();
+        }}
+        className="mb-4 p-2 rounded bg-gray-800 text-white"
+      >
+        <option value="pvp">👥 2 Players</option>
+        <option value="ai">🤖 Play vs AI</option>
+      </select>
+
+      <div className="grid grid-cols-3 gap-2">
+        {board.map((cell, i) => (
+          <button
+            key={i}
+            onClick={() => handleClick(i)}
+            className="w-24 h-24 text-3xl font-bold bg-gray-700 hover:bg-gray-600 flex items-center justify-center rounded"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+            {cell}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 text-xl">
+        {winner
+          ? winner === 'Draw'
+            ? '😅 It\'s a draw!'
+            : `🎉 Winner: ${winner}`
+          : `Next turn: ${isXNext ? 'X' : 'O'}`}
+      </div>
+
+      <button
+        onClick={resetGame}
+        className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded"
+      >
+        Restart
+      </button>
+    </main>
   );
+}
+
+// Determine winner
+// Determine winner
+function calculateWinner(squares: (string | null)[]) {
+  const lines = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+  for (const [a, b, c] of lines) {  // Change `let` to `const`
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+      return squares[a];
+    }
+  }
+  return null;
+}
+
+
+// AI (Minimax)
+function findBestMove(board: (string | null)[]) {
+  let bestScore = -Infinity;  // Use let instead of const
+  let move = -1;
+
+  for (let i = 0; i < board.length; i++) {
+    if (!board[i]) {
+      board[i] = 'O';
+      const score = minimax(board, 0, false);
+      board[i] = null;
+      if (score > bestScore) {
+        bestScore = score;  // Reassign bestScore here
+        move = i;
+      }
+    }
+  }
+  return move;
+}
+
+function minimax(board: (string | null)[], depth: number, isMaximizing: boolean): number {
+  const winner = calculateWinner(board);
+  if (winner === 'O') return 10 - depth;
+  if (winner === 'X') return depth - 10;
+  if (board.every(Boolean)) return 0;
+
+  if (isMaximizing) {
+    let bestScore = -Infinity;  // Use let instead of const
+    for (let i = 0; i < board.length; i++) {
+      if (!board[i]) {
+        board[i] = 'O';
+        const score = minimax(board, depth + 1, false);
+        board[i] = null;
+        bestScore = Math.max(score, bestScore);
+      }
+    }
+    return bestScore;
+  } else {
+    let bestScore = Infinity;  // Use let instead of const
+    for (let i = 0; i < board.length; i++) {
+      if (!board[i]) {
+        board[i] = 'X';
+        const score = minimax(board, depth + 1, true);
+        board[i] = null;
+        bestScore = Math.min(score, bestScore);
+      }
+    }
+    return bestScore;
+  }
 }
