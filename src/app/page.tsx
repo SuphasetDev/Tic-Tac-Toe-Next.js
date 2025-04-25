@@ -121,7 +121,13 @@ function calculateWinner(squares: (string | null)[]) {
 
 // AI (Minimax)
 function findBestMove(board: (string | null)[]) {
-  let bestScore = -Infinity;  // Use let instead of const
+  // ให้ AI เลือกช่องที่ไม่ดีโดยสุ่ม (ให้มันทำผิดพลาดบ่อยขึ้น)
+  if (Math.random() < 0.3) {  // ให้ AI เลือกแบบสุ่ม 30% ของเวลา
+    const availableMoves = board.map((value, index) => value === null ? index : null).filter(index => index !== null);
+    return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+  }
+
+  let bestScore = -Infinity;
   let move = -1;
 
   for (let i = 0; i < board.length; i++) {
@@ -130,7 +136,7 @@ function findBestMove(board: (string | null)[]) {
       const score = minimax(board, 0, false);
       board[i] = null;
       if (score > bestScore) {
-        bestScore = score;  // Reassign bestScore here
+        bestScore = score;
         move = i;
       }
     }
@@ -168,3 +174,4 @@ function minimax(board: (string | null)[], depth: number, isMaximizing: boolean)
     return bestScore;
   }
 }
+UpdateAi
